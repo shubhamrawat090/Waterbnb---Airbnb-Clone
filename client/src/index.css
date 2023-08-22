@@ -4,7 +4,9 @@
 
 input[type="text"],
 input[type="password"],
-input[type="email"] {
+input[type="email"],
+input[type="number"],
+textarea {
   /* This is how you apply tailwind classes via css file */
   @apply w-full border my-1 py-2 px-3 rounded-2xl;
 }
