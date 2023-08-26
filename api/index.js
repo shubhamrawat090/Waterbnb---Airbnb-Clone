@@ -7,6 +7,7 @@ const User = require("./models/User.js");
 const cookieParser = require("cookie-parser");
 const imageDownloader = require("image-downloader");
 const multer = require("multer");
+const fs = require("fs");
 
 require("dotenv").config();
 const app = express();
@@ -20,6 +21,7 @@ app.use(express.json());
 
 app.use(cookieParser());
 
+// Allows to send data(photos here) from our backend's directory to be send in the response
 app.use("/uploads", express.static(__dirname + "/uploads"));
 
 app.use(
@@ -30,7 +32,10 @@ app.use(
 );
 
 // DB Connection
-mongoose.connect(process.env.MONGO_URL);
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => console.log("DB connection successful"))
+  .catch((error) => console.log(error));
 
 // Endpoints
 app.get("/test", (req, res) => {
@@ -110,8 +115,22 @@ app.post("/upload-by-link", async (req, res) => {
   res.json(newName);
 });
 
-app.post("/upload", (req, res) => {
-  
+const photosMiddleware = multer({ dest: "uploads/" });
+app.post("/upload", photosMiddleware.array("photos", 100), (req, res) => {
+  const uploadedFiles = [];
+  for (let i = 0; i < req.files.length; i++) {
+    // add the extension to the uploaded image
+    const { path, originalname } = req.files[i];
+    console.log(req.files[i]);
+    const parts = originalname.split(".");
+    const ext = parts[parts.length - 1];
+    const newPath = path + "." + ext;
+    fs.renameSync(path, newPath);
+    uploadedFiles.push(
+      newPath.replace("uploads/", "").replace("uploads\\", "")
+    );
+  }
+  res.json(uploadedFiles);
 });
 
 app.listen(4000);

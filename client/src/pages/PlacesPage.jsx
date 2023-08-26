@@ -35,12 +35,20 @@ export default function PlacesPage() {
 
   async function addPhotoByLink(ev) {
     ev.preventDefault();
+
+    // If no link is pasted then just return
+    if (!photoLink || !photoLink.trim()) {
+      return;
+    }
+
     const { data: fileName } = await axios.post("/upload-by-link", {
       link: photoLink,
     });
     setAddedPhotos((prev) => {
       return [...prev, fileName];
     });
+
+    // Reset the link
     setPhotoLink("");
   }
 
@@ -48,16 +56,20 @@ export default function PlacesPage() {
     const files = ev.target.files;
 
     const data = new FormData();
-    data.set("photos", files);
+    for (let i = 0; i < files.length; i++) {
+      data.append("photos", files[i]);
+    }
 
-    axios.post("/upload", data, {
-      headers: { "Content-type": "multipart/form-data" },
-    }).then(response => {
-        const {data: fileName} = response;
+    axios
+      .post("/upload", data, {
+        headers: { "Content-type": "multipart/form-data" },
+      })
+      .then((response) => {
+        const { data: fileNames } = response;
         setAddedPhotos((prev) => {
-            return [...prev, fileName];
-          });
-    })
+          return [...prev, ...fileNames];
+        });
+      });
   }
 
   return (
@@ -135,17 +147,22 @@ export default function PlacesPage() {
               {/* Display the added photos */}
               {addedPhotos.length > 0 &&
                 addedPhotos.map((link, index) => (
-                  <div key={index}>
+                  <div className="h-32 flex" key={index}>
                     <img
-                      className="rounded-2xl"
+                      className="rounded-2xl w-full object-cover"
                       src={`http://localhost:4000/uploads/${link}`}
                       alt={link}
                     />
                   </div>
                 ))}
 
-              <label className="flex gap-1 justify-center items-center border bg-transparent rounded-2xl p-2 text-2xl text-gray-600 cursor-pointer">
-                <input type="file" className="hidden" onChange={uploadPhoto} />
+              <label className="h-32 flex gap-1 justify-center items-center border bg-transparent rounded-2xl p-2 text-2xl text-gray-600 cursor-pointer">
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={uploadPhoto}
+                />
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
